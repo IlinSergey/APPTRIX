@@ -16,7 +16,7 @@ class ClientRegistrationView(APIView):
     def post(self, request):
         serializer = ClientRegistrationSerialazer(data=request.data)
         if serializer.is_valid():
-            client = serializer.save()
+            client = serializer.create(serializer.validated_data)
             token = Token.objects.get_or_create(user=client)[0].key
             return Response({"message": "Вы успешно зарегестрированы",
                              "Ваш токен": token}, status=status.HTTP_201_CREATED)
@@ -48,13 +48,10 @@ class ClientLogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        token = request.META.get('HTTP_AUTHORIZATION').split(' ')[1]
-
+        token = request.META.get("HTTP_AUTHORIZATION").split(" ")[1]
         try:
             Token.objects.get(key=token).delete()
         except Token.DoesNotExist:
             pass
-
         logout(request)
-
         return Response("Вы разлогинились!")

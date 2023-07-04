@@ -3,12 +3,14 @@ from django.db import models
 
 
 class ClientManager(BaseUserManager):
+
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("Email должен быть обязательно введен!")
 
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
+
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -44,7 +46,7 @@ class Client(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "email"
 
-    object = ClientManager()
+    objects = ClientManager()
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
