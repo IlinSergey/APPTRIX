@@ -50,3 +50,13 @@ class Client(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+
+class Like(models.Model):
+    """Оценки пользователей"""
+
+    sender = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="Оценивающий")
+    receiver = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="Оцениваемый")
+
+    class Meta:
+        unique_together = ("sender", "receiver")

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Client
+from .models import Client, Like
 from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -59,3 +59,9 @@ class ClientRegistrationSerialazer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = ["first_name", "last_name", "gender", "email", "password", "avatar"]
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Like
+        fields = "__all__"

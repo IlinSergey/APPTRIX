@@ -1,11 +1,15 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import ClientRegistrationSerialazer
+from .serializers import ClientRegistrationSerialazer, LikeSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
-from .models import Client
+from .models import Client, Like
 from django.contrib.auth import logout
+from django.shortcuts import get_object_or_404
+from django.core.mail import send_mail
+from django.db import IntegrityError
+from django.contrib.auth.hashers import check_password
 
 
 class ClientRegistrationView(APIView):
@@ -30,14 +34,15 @@ class ClientLoginView(APIView):
 
     def post(self, request):
         email = request.data.get("email")
-        password = str(request.data.get("password"))
+        password = request.data.get("password")
         try:
-            user = Client.object.get(email=email)
+            user = Client.objects.get(email=email)
+
         except BaseException:
             return Response({"ошибка": "Пользователь не найден!"}, status=400)
         token = Token.objects.get_or_create(user=user)[0].key
 
-        if user.password == password:
+        if check_password(password, user.password):
             return Response({"Ваш токен": token})
         return Response({"ошибка": "неверные логин или пароль!"}, status=401)
 
@@ -55,3 +60,32 @@ class ClientLogoutView(APIView):
             pass
         logout(request)
         return Response("Вы разлогинились!")
+
+
+class ClientMatchView(APIView):
+    """Оценивание участников"""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, id):
+        sender = request.user
+        receiver_id = id
+
+        receiver = get_object_or_404(Client, id=receiver_id)
+        if sender.id == receiver_id:
+            return Response("Нельзя оценить самого себя")
+        if Like.objects.filter(sender=sender, receiver=receiver).exists():
+            return Response("Вы уже голосовали за этого участника")
+        like_data = {
+            "sender": sender,
+            "receiver": receiver
+            }
+        serializer = LikeSerializer(data=like_data)
+        if serializer.is_valid():
+            serializer.save()
+
+            # Проверка на взаимную симпатию
+            if Like.objects.filter(sender=receiver, receiver=sender).exists():
+                return Response("Поздравляем, симпатия взаимна!")
+            return Response("Ваш голос принят, симпатия пока не взаимна")
+        return Response("Ошибка", status=400)
