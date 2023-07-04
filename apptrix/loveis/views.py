@@ -1,15 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .serializers import ClientRegistrationSerialazer, LikeSerializer
+from rest_framework import status, filters
+from .serializers import ClientRegistrationSerialazer, LikeSerializer, ClientSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from .models import Client, Like
 from django.contrib.auth import logout
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
-from django.db import IntegrityError
+from rest_framework.generics import ListAPIView
 from django.contrib.auth.hashers import check_password
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import ClientFilter
 
 
 class ClientRegistrationView(APIView):
@@ -86,6 +88,15 @@ class ClientMatchView(APIView):
 
             # Проверка на взаимную симпатию
             if Like.objects.filter(sender=receiver, receiver=sender).exists():
-                return Response("Поздравляем, симпатия взаимна!")
+                return Response(f"Поздравляем, симпатия взаимна!")
             return Response("Ваш голос принят, симпатия пока не взаимна")
         return Response("Ошибка", status=400)
+
+
+class ClientListView(ListAPIView):
+    queryset = Client.objects.all()
+    serializer_class = ClientSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ClientFilter
+    search_fields = ["first_name", "last_name"]
+    ordering_fields = ["first_name", "last_name"]

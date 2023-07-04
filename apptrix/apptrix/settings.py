@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
+    "django_filters",
     "loveis.apps.LoveisConfig",
     "rest_framework",
     "rest_framework.authtoken",
@@ -133,7 +134,11 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
-    ]
+    ],
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+
+    ],
     }
 
 AUTH_USER_MODEL = "loveis.Client"

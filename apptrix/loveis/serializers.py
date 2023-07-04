@@ -65,3 +65,9 @@ class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = "__all__"
+
+
+class ClientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Client
+        fields = ["id", "first_name", "last_name", "avatar", "gender", "email"]
