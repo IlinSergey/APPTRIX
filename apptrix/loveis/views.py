@@ -112,6 +112,9 @@ class ClientMatchView(APIView):
 
 
 class ClientListView(ListAPIView):
+
+    permission_classes = [IsAuthenticated]
+
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

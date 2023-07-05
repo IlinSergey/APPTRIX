@@ -41,6 +41,10 @@ class Client(AbstractBaseUser, PermissionsMixin):
     gender = models.CharField("Пол", max_length=6, choices=gender_choices)
     email = models.EmailField("E-mail", unique=True)
 
+    address = models.CharField("Адрес", max_length=255, blank=True, null=True)
+    latitude = models.DecimalField("Широта", max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField("Долгота", max_digits=9, decimal_places=6, blank=True, null=True)
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)

@@ -4,6 +4,7 @@ from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
 from rest_framework import serializers
+from geopy.geocoders import Nominatim
 
 from .models import Client, Like
 
@@ -11,15 +12,29 @@ from .models import Client, Like
 class ClientRegistrationSerialazer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
 
-    def create(self, validated_data):
+    class Meta:
+        model = Client
+        fields = ["first_name", "last_name", "gender", "email", "password", "avatar", "address", "latitude", "longitude"]
 
+        read_only_fields = ["latitude", "longitude"]
+
+    def create(self, validated_data):
+        address = validated_data.pop("address", None)
         password = validated_data.pop("password")
         avatar = validated_data.pop("avatar", None)
 
+        geolocator = Nominatim(user_agent="apptrix")
+        location = geolocator.geocode(address)  # Получаем координаты по адресу
+
+        if location:
+            validated_data["latitude"] = round(location.latitude, 6)
+            validated_data["longitude"] = round(location.longitude, 6)
+        validated_data["address"] = address
         client = Client.objects.create_user(
             password=password,
             **validated_data
         )
+
         if avatar:
             avatar_with_watermark = self.watermark(avatar)
             client.avatar = avatar_with_watermark
@@ -58,15 +73,11 @@ class ClientRegistrationSerialazer(serializers.ModelSerializer):
 
         return processed_avatar
 
-    class Meta:
-        model = Client
-        fields = ["first_name", "last_name", "gender", "email", "password", "avatar"]
-
 
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
-        fields = "__all__"
+        fields = ["id", "first_name", "last_name", "avatar", "gender"]
 
 
 class LikeSerializer(serializers.ModelSerializer):
