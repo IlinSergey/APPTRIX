@@ -1,4 +1,5 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
+                                        PermissionsMixin)
 from django.db import models
 
 
@@ -55,8 +56,10 @@ class Client(AbstractBaseUser, PermissionsMixin):
 class Like(models.Model):
     """Оценки пользователей"""
 
-    sender = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="Оценивающий")
-    receiver = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="Оцениваемый")
+    sender = models.ForeignKey(Client, on_delete=models.CASCADE,
+                               related_name="sender_likes")
+    receiver = models.ForeignKey(Client, on_delete=models.CASCADE,
+                                 related_name="receiver_likes")
 
     class Meta:
         unique_together = ("sender", "receiver")

@@ -1,17 +1,19 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, filters
-from .serializers import ClientRegistrationSerialazer, LikeSerializer, ClientSerializer
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.authtoken.models import Token
-from .models import Client, Like
 from django.contrib.auth import logout
-from django.shortcuts import get_object_or_404
-from django.core.mail import send_mail
-from rest_framework.generics import ListAPIView
 from django.contrib.auth.hashers import check_password
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status
+from rest_framework.authtoken.models import Token
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .filters import ClientFilter
+from .models import Client, Like
+from .serializers import (ClientRegistrationSerialazer, ClientSerializer,
+                          LikeSerializer)
 
 
 class ClientRegistrationView(APIView):
@@ -72,24 +74,40 @@ class ClientMatchView(APIView):
     def post(self, request, id):
         sender = request.user
         receiver_id = id
-
         receiver = get_object_or_404(Client, id=receiver_id)
         if sender.id == receiver_id:
             return Response("Нельзя оценить самого себя")
+
         if Like.objects.filter(sender=sender, receiver=receiver).exists():
             return Response("Вы уже голосовали за этого участника")
+
         like_data = {
-            "sender": sender,
-            "receiver": receiver
-            }
+            "sender": sender.id,
+            "receiver": receiver.id}
+
         serializer = LikeSerializer(data=like_data)
+
         if serializer.is_valid():
             serializer.save()
-
             # Проверка на взаимную симпатию
             if Like.objects.filter(sender=receiver, receiver=sender).exists():
-                return Response(f"Поздравляем, симпатия взаимна!")
-            return Response("Ваш голос принят, симпатия пока не взаимна")
+                # Отправка сообщений на почту обоим участникам
+                send_mail(
+                    "Взаимная симпатия",
+                    f"Вы понравились {receiver.first_name}! Почта участника: {receiver.email}",
+                    "djangorest@yandex.ru",
+                    [sender.email],
+                    fail_silently=False
+                )
+                send_mail(
+                    "Взаимная симпатия",
+                    f"Вы понравились {sender.first_name}! Почта участника: {sender.email}",
+                    "djangorest@yandex.ru",
+                    [receiver.email],
+                    fail_silently=False
+                )
+                return Response(f"Поздравляем, симпатия взаимна! Вот email партнера: {receiver.email}")
+            return Response(f"Вы проявили симпатию к {receiver.first_name}")
         return Response("Ошибка", status=400)
 
 

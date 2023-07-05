@@ -1,9 +1,11 @@
-from rest_framework import serializers
-from .models import Client, Like
-from PIL import Image
-from io import BytesIO
-from django.core.files.uploadedfile import InMemoryUploadedFile
 import os
+from io import BytesIO
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from PIL import Image
+from rest_framework import serializers
+
+from .models import Client, Like
 
 
 class ClientRegistrationSerialazer(serializers.ModelSerializer):
@@ -61,13 +63,18 @@ class ClientRegistrationSerialazer(serializers.ModelSerializer):
         fields = ["first_name", "last_name", "gender", "email", "password", "avatar"]
 
 
-class LikeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Like
-        fields = "__all__"
-
-
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
-        fields = ["id", "first_name", "last_name", "avatar", "gender", "email"]
+        fields = "__all__"
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    sender = serializers.PrimaryKeyRelatedField(queryset=Client.objects.all())
+    receiver = serializers.PrimaryKeyRelatedField(queryset=Client.objects.all())
+    sender_details = ClientSerializer(source="sender", read_only=True)
+    receiver_details = ClientSerializer(source="receiver", read_only=True)
+
+    class Meta:
+        model = Like
+        fields = "__all__"
